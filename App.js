@@ -18,7 +18,7 @@ import LoginSignupScreen from './screen/LoginSignupScreen';
 import GatekeepingScreen from './screen/GatekeepingScreen';
 import MainTabs from './screen/MainTabs';
 import { supabase } from './lib/supabase';
-import { COLORS, paperTheme } from './theme';
+import { ThemeProvider, useAppTheme } from './ThemeContext';
 
 const Stack = createStackNavigator();
 
@@ -26,11 +26,10 @@ const Stack = createStackNavigator();
 // Gatekeeping (awaiting manual verification) -> Home (once verified).
 // This is a plain stack — no persistent nav chrome — because none of
 // Onboarding/Login/Gatekeeping should be reachable once a user is
-// authenticated and verified. Once the real app exists, Home becomes the
-// entry point into a separate tab navigator (Meetings / Slots / New /
-// Links / Profile, per the design); for now it's an intentionally blank
-// screen that only exists so verification has somewhere to route to.
-export default function App() {
+// authenticated and verified.
+function AppInner() {
+  const { colors, paperTheme, isDark } = useAppTheme();
+
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -77,8 +76,8 @@ export default function App() {
 
   if (!fontsLoaded || initialRoute === null) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background }}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -96,7 +95,7 @@ export default function App() {
           initialRouteName={initialRoute}
           screenOptions={{
             headerShown: false,
-            cardStyle: { backgroundColor: COLORS.background },
+            cardStyle: { backgroundColor: colors.background },
           }}
         >
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
@@ -105,7 +104,15 @@ export default function App() {
           <Stack.Screen name="Home" component={MainTabs} />
         </Stack.Navigator>
       </NavigationContainer>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </PaperProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
   );
 }

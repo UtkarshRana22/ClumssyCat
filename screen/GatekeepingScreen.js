@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import AwaitingApprovalMascot from '../assets/AwaitingApprovalMascot';
 import { supabase } from '../lib/supabase';
-import { COLORS, FONTS, RADIUS } from '../theme';
+import { useAppTheme } from '../ThemeContext';
+import { FONTS, RADIUS } from '../theme';
 
 const STEPS = [
   { key: 'account', icon: 'check', label: 'Account Created', sub: 'Profile credentials recorded', status: 'done' },
@@ -24,6 +25,9 @@ const PERKS = [
 // (e.g. someone flips it in the Supabase dashboard) — no need to relaunch
 // the app or manually refresh.
 export default function GatekeepingScreen({ navigation }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [notifyOn, setNotifyOn] = useState(false);
 
   useEffect(() => {
@@ -71,7 +75,7 @@ export default function GatekeepingScreen({ navigation }) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={styles.cardHeaderLeft}>
-              <MaterialCommunityIcons name="paw" size={18} color={COLORS.secondary} />
+              <MaterialCommunityIcons name="paw" size={18} color={colors.secondary} />
               <Text style={styles.cardHeaderTitle}>Onboarding Status</Text>
             </View>
             <View style={styles.stepPill}>
@@ -88,18 +92,18 @@ export default function GatekeepingScreen({ navigation }) {
                 <View
                   style={[
                     styles.stepIconCircle,
-                    step.status === 'review' && { backgroundColor: COLORS.tertiary },
+                    step.status === 'review' && { backgroundColor: colors.tertiary },
                   ]}
                 >
                   <MaterialCommunityIcons
                     name={step.icon}
                     size={16}
-                    color={step.status === 'review' ? '#4E3E00' : step.status === 'queued' ? COLORS.textMuted : COLORS.secondary}
+                    color={step.status === 'review' ? colors.onTertiaryContainer : step.status === 'queued' ? colors.textMuted : colors.secondary}
                   />
                 </View>
                 <View>
                   <Text style={styles.stepLabel}>{step.label}</Text>
-                  <Text style={[styles.stepSub, step.status === 'review' && { color: COLORS.tertiaryText }]}>
+                  <Text style={[styles.stepSub, step.status === 'review' && { color: colors.tertiaryText }]}>
                     {step.sub}
                   </Text>
                 </View>
@@ -125,12 +129,12 @@ export default function GatekeepingScreen({ navigation }) {
         {/* Unlocked once approved */}
         <View style={styles.perksCard}>
           <View style={styles.perksHeaderRow}>
-            <MaterialCommunityIcons name="auto-fix" size={18} color={COLORS.primary} />
+            <MaterialCommunityIcons name="auto-fix" size={18} color={colors.primary} />
             <Text style={styles.perksHeaderTitle}>Unlocked once approved:</Text>
           </View>
           {PERKS.map((perk) => (
             <View key={perk} style={styles.perkRow}>
-              <MaterialCommunityIcons name="paw" size={14} color={COLORS.primary} style={{ marginTop: 2 }} />
+              <MaterialCommunityIcons name="paw" size={14} color={colors.primary} style={{ marginTop: 2 }} />
               <Text style={styles.perkText}>{perk}</Text>
             </View>
           ))}
@@ -143,16 +147,16 @@ export default function GatekeepingScreen({ navigation }) {
           <MaterialCommunityIcons
             name={notifyOn ? 'check-circle' : 'bell-ring-outline'}
             size={18}
-            color={notifyOn ? COLORS.textSecondary : '#442cb1'}
+            color={notifyOn ? colors.textSecondary : colors.onSecondaryContainer}
           />
-          <Text style={[styles.notifyLabel, notifyOn && { color: COLORS.textSecondary }]}>
+          <Text style={[styles.notifyLabel, notifyOn && { color: colors.textSecondary }]}>
             {notifyOn ? 'Notifications Active ✓' : 'Turn On Push Notifications 🔔'}
           </Text>
         </Pressable>
 
         <View style={styles.bottomRow}>
           <Pressable style={styles.bottomLinkLeft}>
-            <MaterialCommunityIcons name="chat-outline" size={16} color={COLORS.textSecondary} />
+            <MaterialCommunityIcons name="chat-outline" size={16} color={colors.textSecondary} />
             <Text style={styles.bottomLinkText}>Need quick help? Ping Support</Text>
           </Pressable>
           <Pressable onPress={() => supabase.auth.signOut()}>
@@ -164,242 +168,244 @@ export default function GatekeepingScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  container: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-    alignItems: 'center',
-  },
-  reviewPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#E5DEFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.pill,
-    marginBottom: 16,
-  },
-  reviewDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.secondary,
-  },
-  reviewPillText: {
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: '#442cb1',
-  },
-  title: {
-    fontFamily: FONTS.bold,
-    fontSize: 20,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  subtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 20,
-    maxWidth: 320,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 18,
-    gap: 14,
-    marginBottom: 16,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardHeaderTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-  },
-  stepPill: {
-    backgroundColor: COLORS.surfaceSunken,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: RADIUS.pill,
-  },
-  stepPillText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: COLORS.textSecondary,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  stepRowActive: {
-    backgroundColor: COLORS.surfaceSunken,
-    borderRadius: 16,
-    padding: 8,
-  },
-  stepRowQueued: {
-    opacity: 0.5,
-  },
-  stepLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flexShrink: 1,
-  },
-  stepIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.surfaceSunken,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.textPrimary,
-  },
-  stepSub: {
-    fontFamily: FONTS.regular,
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 1,
-  },
-  statusPillDone: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: COLORS.surfaceSunken,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADIUS.pill,
-  },
-  statusDotSecondary: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.secondary,
-  },
-  statusPillDoneText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: COLORS.secondary,
-  },
-  statusPillReview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: COLORS.tertiary,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADIUS.pill,
-  },
-  statusDotTertiary: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#B45309',
-  },
-  statusPillReviewText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: '#4E3E00',
-  },
-  statusQueuedText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: COLORS.textSecondary,
-  },
-  perksCard: {
-    width: '100%',
-    backgroundColor: COLORS.surfaceSunken,
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 20,
-  },
-  perksHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  perksHeaderTitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-  },
-  perkRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginBottom: 8,
-  },
-  perkText: {
-    flex: 1,
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    lineHeight: 18,
-    color: COLORS.textSecondary,
-  },
-  notifyButton: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#E5DEFF',
-    borderRadius: RADIUS.pill,
-    paddingVertical: 14,
-    marginBottom: 12,
-  },
-  notifyButtonActive: {
-    backgroundColor: COLORS.surfaceSunken,
-  },
-  notifyLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: '#442cb1',
-  },
-  bottomRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  bottomLinkLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  bottomLinkText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  logoutText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 32,
+      alignItems: 'center',
+    },
+    reviewPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.secondaryContainer,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: RADIUS.pill,
+      marginBottom: 16,
+    },
+    reviewDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.secondary,
+    },
+    reviewPillText: {
+      fontFamily: FONTS.bold,
+      fontSize: 10,
+      letterSpacing: 0.5,
+      color: colors.onSecondaryContainer,
+    },
+    title: {
+      fontFamily: FONTS.bold,
+      fontSize: 20,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginTop: 16,
+    },
+    subtitle: {
+      fontFamily: FONTS.regular,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 8,
+      marginBottom: 20,
+      maxWidth: 320,
+    },
+    card: {
+      width: '100%',
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 18,
+      gap: 14,
+      marginBottom: 16,
+    },
+    cardHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cardHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    cardHeaderTitle: {
+      fontFamily: FONTS.bold,
+      fontSize: 15,
+      color: colors.textPrimary,
+    },
+    stepPill: {
+      backgroundColor: colors.surfaceSunken,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: RADIUS.pill,
+    },
+    stepPillText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    stepRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 4,
+    },
+    stepRowActive: {
+      backgroundColor: colors.surfaceSunken,
+      borderRadius: 16,
+      padding: 8,
+    },
+    stepRowQueued: {
+      opacity: 0.5,
+    },
+    stepLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flexShrink: 1,
+    },
+    stepIconCircle: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceSunken,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepLabel: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
+    stepSub: {
+      fontFamily: FONTS.regular,
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    statusPillDone: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: colors.surfaceSunken,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: RADIUS.pill,
+    },
+    statusDotSecondary: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: colors.secondary,
+    },
+    statusPillDoneText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.secondary,
+    },
+    statusPillReview: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: colors.tertiary,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: RADIUS.pill,
+    },
+    statusDotTertiary: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: colors.tertiaryText,
+    },
+    statusPillReviewText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.onTertiaryContainer,
+    },
+    statusQueuedText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    perksCard: {
+      width: '100%',
+      backgroundColor: colors.surfaceSunken,
+      borderRadius: 20,
+      padding: 18,
+      marginBottom: 20,
+    },
+    perksHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10,
+    },
+    perksHeaderTitle: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 14,
+      color: colors.textPrimary,
+    },
+    perkRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      marginBottom: 8,
+    },
+    perkText: {
+      flex: 1,
+      fontFamily: FONTS.regular,
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    notifyButton: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.secondaryContainer,
+      borderRadius: RADIUS.pill,
+      paddingVertical: 14,
+      marginBottom: 12,
+    },
+    notifyButtonActive: {
+      backgroundColor: colors.surfaceSunken,
+    },
+    notifyLabel: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 14,
+      color: colors.onSecondaryContainer,
+    },
+    bottomRow: {
+      width: '100%',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    bottomLinkLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    bottomLinkText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    logoutText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+  });
+}

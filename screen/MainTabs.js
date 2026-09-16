@@ -4,7 +4,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import HomeScreen from './HomeScreen';
 import EntryScreen from './EntryScreen';
-import { COLORS, FONTS } from '../theme';
+import ProfileScreen from './ProfileScreen';
+import { useAppTheme } from '../ThemeContext';
+import { FONTS } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -18,15 +20,17 @@ function AddPlaceholder() {
 
 // Shown once a user is verified, in place of the pre-auth Stack.
 function HomeTabs() {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: COLORS.white,
-          borderTopColor: COLORS.border,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
         },
         tabBarLabelStyle: {
           fontFamily: FONTS.semiBold,
@@ -60,6 +64,15 @@ function HomeTabs() {
             navigation.getParent()?.navigate('Entry');
           },
         })}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account-circle-outline" color={color} size={size} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );

@@ -1,29 +1,39 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View, Text, Pressable, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View, Text, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import ConfirmDialog from '../components/ConfirmDialog';
 import CatLogo from '../assets/CatLogo';
 import { supabase } from '../lib/supabase';
-import { COLORS, FONTS, RADIUS, tactileShadow } from '../theme';
+import { useAppTheme } from '../ThemeContext';
+import { FONTS, RADIUS, tactileShadow } from '../theme';
 
 export default function LoginSignupScreen({ navigation }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [mode, setMode] = useState('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Single themed notice popup, replacing Alert.alert — { title, message }.
+  const [notice, setNotice] = useState(null);
 
   const isSignup = mode === 'signup';
 
   async function handleSubmit() {
     if (!email.trim() || !password) {
-      Alert.alert('Missing info', 'Please fill in your email and password.');
+      setNotice({ title: 'Missing info', message: 'Please fill in your email and password.' });
       return;
     }
     if (isSignup && !name.trim()) {
-      Alert.alert('Missing info', "Please tell us what to call you — we'll use it on your account.");
+      setNotice({
+        title: 'Missing info',
+        message: "Please tell us what to call you — we'll use it on your account.",
+      });
       return;
     }
 
@@ -52,7 +62,10 @@ export default function LoginSignupScreen({ navigation }) {
       // Gatekeeping screen for now.
       navigation.navigate('Gatekeeping');
     } catch (err) {
-      Alert.alert(isSignup ? 'Sign up failed' : 'Log in failed', err.message ?? 'Something went wrong.');
+      setNotice({
+        title: isSignup ? 'Sign up failed' : 'Log in failed',
+        message: err.message ?? 'Something went wrong.',
+      });
     } finally {
       setLoading(false);
     }
@@ -104,12 +117,12 @@ export default function LoginSignupScreen({ navigation }) {
                 <Text style={styles.fieldHint}>What should we call you?</Text>
               </View>
               <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="account" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+                <MaterialCommunityIcons name="account" size={18} color={colors.textSecondary} style={styles.inputIcon} />
                 <TextInput
                   value={name}
                   onChangeText={setName}
                   placeholder="Alex Morgan"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   style={styles.input}
                 />
               </View>
@@ -119,12 +132,12 @@ export default function LoginSignupScreen({ navigation }) {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Email</Text>
             <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="at" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <MaterialCommunityIcons name="at" size={18} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 placeholder="alex@gmail.com"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 style={styles.input}
@@ -138,12 +151,12 @@ export default function LoginSignupScreen({ navigation }) {
               {!isSignup && <Text style={styles.forgotLink}>Forgot code?</Text>}
             </View>
             <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="lock-outline" size={18} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-outline" size={18} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••••••"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry={!showPassword}
                 style={[styles.input, { paddingRight: 36 }]}
               />
@@ -151,7 +164,7 @@ export default function LoginSignupScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={18}
-                  color={COLORS.textSecondary}
+                  color={colors.textSecondary}
                 />
               </Pressable>
             </View>
@@ -160,7 +173,7 @@ export default function LoginSignupScreen({ navigation }) {
           <Pressable
             style={({ pressed }) => [
               styles.submitButton,
-              tactileShadow(),
+              tactileShadow(colors.primaryShadow),
               pressed && styles.submitButtonPressed,
               loading && styles.submitButtonDisabled,
             ]}
@@ -168,7 +181,7 @@ export default function LoginSignupScreen({ navigation }) {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color={COLORS.white} />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.submitLabel}>
                 {isSignup ? 'Create Free Account 🚀' : 'Log In to Schedule 🐾'}
@@ -182,185 +195,196 @@ export default function LoginSignupScreen({ navigation }) {
           <Text style={styles.footnoteLink}>Service Terms</Text>.
         </Text>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={!!notice}
+        title={notice?.title}
+        message={notice?.message}
+        confirmLabel="OK"
+        destructive={false}
+        onConfirm={() => setNotice(null)}
+      />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  container: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-  },
-  mascotHeader: {
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 20,
-  },
-  mascotBadgeWrap: {
-    marginBottom: 12,
-  },
-  mascotCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  meowBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.pill,
-    ...cardShadow(),
-  },
-  meowSparkle: { fontSize: 11 },
-  meowText: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: COLORS.textPrimary,
-  },
-  title: {
-    fontFamily: FONTS.bold,
-    fontSize: 22,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 6,
-    maxWidth: 280,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 20,
-    gap: 20,
-    ...cardShadow(),
-  },
-  switcher: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surfaceSunken,
-    borderRadius: RADIUS.pill,
-    padding: 4,
-  },
-  switchTab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  switchTabActive: {
-    backgroundColor: COLORS.primary,
-    ...tactileShadow(),
-    shadowRadius: 0,
-  },
-  switchLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  switchLabelActive: {
-    color: COLORS.white,
-  },
-  switchPulseDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.white,
-  },
-  field: {
-    gap: 6,
-  },
-  fieldLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  fieldLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.textPrimary,
-  },
-  fieldHint: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: COLORS.primary,
-  },
-  forgotLink: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    color: COLORS.secondaryText,
-  },
-  inputWrap: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: 14,
-    zIndex: 1,
-  },
-  input: {
-    backgroundColor: COLORS.surfaceSunken,
-    borderRadius: RADIUS.input,
-    paddingVertical: 13,
-    paddingLeft: 40,
-    paddingRight: 16,
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 14,
-  },
-  submitButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.pill,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitButtonPressed: {
-    transform: [{ translateY: 2 }],
-  },
-  submitButtonDisabled: {
-    opacity: 0.7,
-  },
-  submitLabel: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: COLORS.white,
-  },
-  footnote: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  footnoteLink: {
-    color: COLORS.primary,
-    textDecorationLine: 'underline',
-  },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      paddingHorizontal: 20,
+      paddingBottom: 32,
+    },
+    mascotHeader: {
+      alignItems: 'center',
+      marginTop: 12,
+      marginBottom: 20,
+    },
+    mascotBadgeWrap: {
+      marginBottom: 12,
+    },
+    mascotCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primaryTint,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    meowBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: RADIUS.pill,
+      ...cardShadow(),
+    },
+    meowSparkle: { fontSize: 11 },
+    meowText: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.textPrimary,
+    },
+    title: {
+      fontFamily: FONTS.bold,
+      fontSize: 22,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontFamily: FONTS.regular,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 6,
+      maxWidth: 280,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 20,
+      gap: 20,
+      ...cardShadow(),
+    },
+    switcher: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceSunken,
+      borderRadius: RADIUS.pill,
+      padding: 4,
+    },
+    switchTab: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: RADIUS.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 6,
+    },
+    switchTabActive: {
+      backgroundColor: colors.primary,
+      ...tactileShadow(colors.primaryShadow),
+      shadowRadius: 0,
+    },
+    switchLabel: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    switchLabelActive: {
+      color: colors.white,
+    },
+    switchPulseDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: colors.white,
+    },
+    field: {
+      gap: 6,
+    },
+    fieldLabelRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    fieldLabel: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
+    fieldHint: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.primary,
+    },
+    forgotLink: {
+      fontFamily: FONTS.semiBold,
+      fontSize: 11,
+      color: colors.secondaryText,
+    },
+    inputWrap: {
+      position: 'relative',
+      justifyContent: 'center',
+    },
+    inputIcon: {
+      position: 'absolute',
+      left: 14,
+      zIndex: 1,
+    },
+    input: {
+      backgroundColor: colors.surfaceSunken,
+      borderRadius: RADIUS.input,
+      paddingVertical: 13,
+      paddingLeft: 40,
+      paddingRight: 16,
+      fontFamily: FONTS.regular,
+      fontSize: 14,
+      color: colors.textPrimary,
+    },
+    eyeButton: {
+      position: 'absolute',
+      right: 14,
+    },
+    submitButton: {
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.pill,
+      paddingVertical: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    submitButtonPressed: {
+      transform: [{ translateY: 2 }],
+    },
+    submitButtonDisabled: {
+      opacity: 0.7,
+    },
+    submitLabel: {
+      fontFamily: FONTS.bold,
+      fontSize: 15,
+      color: colors.white,
+    },
+    footnote: {
+      fontFamily: FONTS.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 20,
+    },
+    footnoteLink: {
+      color: colors.primary,
+      textDecorationLine: 'underline',
+    },
+  });
+}
 
 function cardShadow() {
   return {
